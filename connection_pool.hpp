@@ -13,6 +13,8 @@
 #include <string>
 #include <tuple>
 
+#define TUPLE_ARGS std::tuple<const char*>
+
 namespace ormpp{
     template<typename DB>
     class connection_pool{
@@ -30,7 +32,6 @@ namespace ormpp{
 
         std::shared_ptr<DB> get(){
             std::unique_lock<std::mutex> lock( mutex_ );
-
             while ( pool_.empty() ){
                 if(condition_.wait_for(lock, std::chrono::seconds(3))== std::cv_status::timeout){
                     //timeout
@@ -92,27 +93,13 @@ namespace ormpp{
             return std::apply(fn, args_)? conn: nullptr;
         }
 
-        connection_pool()= default;
-        ~connection_pool()= default;
-        connection_pool(const connection_pool&)= delete;
-        connection_pool& operator=(const connection_pool&)= delete;
-
-        std::deque<std::shared_ptr<DB>> pool_;
-        std::mutex mutex_;
-        std::condition_variable condition_;
-        std::once_flag flag_;
-        std::tuple<const char*, const char*, const char*, const char*, int> args_;
+        std::deque<std::shared_ptr<DB>> pool_={};
+        std::mutex mutex_={};
+        std::condition_variable condition_={};
+        std::once_flag flag_={};
+        TUPLE_ARGS args_;
     };
 
-    template<typename DB>
-    struct conn_guard{
-        conn_guard(std::shared_ptr<DB> con) : conn_(con){}
-        ~conn_guard(){
-			connection_pool<DB>::instance().return_back(conn_.lock());
-        }
-    private:
-        std::weak_ptr<DB> conn_;
-    };
 }
 
 
