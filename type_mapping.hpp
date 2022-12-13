@@ -13,21 +13,6 @@ namespace ormpp {
     };
 
 
-    template<typename T, typename U>
-    class Conversion {
-    private:
-        static char Test(U);
-
-        static int Test(...);
-
-        static T MakeT();
-
-    public:
-        enum {
-            exists = sizeof(Test(MakeT())) == sizeof(char)
-        };
-    };
-
 #define REGISTER_TYPE(Type, Index)                                              \
     inline constexpr int type_to_id(identity<Type>) noexcept { return Index; } \
     inline constexpr auto id_to_type( std::integral_constant<std::size_t, Index > ) noexcept { Type res{}; return res; }
@@ -71,40 +56,40 @@ namespace ormpp {
 
         template<class T>
         inline constexpr auto type_to_name(identity<T>) noexcept {
-            if constexpr (Conversion<T, bool>::exists) {
+            if constexpr (std::is_convertible_v<T, bool>) {
                 return type_to_name(identity<bool>{});
             }
-            if constexpr (Conversion<T, char>::exists) {
+            if constexpr (std::is_convertible_v<T, char>) {
                 return type_to_name(identity<char>{});
             }
-            if constexpr (Conversion<T, short>::exists) {
+            if constexpr (std::is_convertible_v<T, short>) {
                 return type_to_name(identity<short>{});
             }
-            if constexpr (Conversion<T, int>::exists) {
+            if constexpr (std::is_convertible_v<T, int>) {
                 return type_to_name(identity<int>{});
             }
-            if constexpr (Conversion<T, unsigned int>::exists) {
+            if constexpr (std::is_convertible_v<T, unsigned int>) {
                 return type_to_name(identity<unsigned int>{});
             }
-            if constexpr (Conversion<T, float>::exists) {
+            if constexpr (std::is_convertible_v<T, float>) {
                 return type_to_name(identity<float>{});
             }
-            if constexpr (Conversion<T, double>::exists) {
+            if constexpr (std::is_convertible_v<T, double>) {
                 return type_to_name(identity<double>{});
             }
-            if constexpr (Conversion<T, int64_t>::exists) {
+            if constexpr (std::is_convertible_v<T, int64_t>) {
                 return type_to_name(identity<int64_t>{});
             }
-            if constexpr (Conversion<T, uint8_t>::exists) {
+            if constexpr (std::is_convertible_v<T, uint8_t>) {
                 return type_to_name(identity<uint8_t>{});
             }
-            if constexpr (Conversion<T, uint16_t>::exists) {
+            if constexpr (std::is_convertible_v<T, uint16_t>) {
                 return type_to_name(identity<uint16_t>{});
             }
-            if constexpr (Conversion<T, uint32_t>::exists) {
+            if constexpr (std::is_convertible_v<T, uint32_t>) {
                 return type_to_name(identity<uint32_t>{});
             }
-            if constexpr (Conversion<T, uint64_t>::exists) {
+            if constexpr (std::is_convertible_v<T, uint64_t>) {
                 return type_to_name(identity<uint64_t>{});
             }
 
