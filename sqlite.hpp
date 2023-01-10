@@ -129,6 +129,8 @@ namespace ormpp {
         template<typename T, typename... Args>
         std::enable_if_t<iguana::is_reflection_v<T>, std::vector<T>> query(Args &&... args) {
             std::string sql = generate_query_sql<T>(args...);
+            constexpr auto SIZE = iguana::get_value<T>();
+
             int result = sqlite3_prepare_v2(handle_, sql.data(), (int) sql.size(), &stmt_, nullptr);
             if (result != SQLITE_OK) {
                 set_last_error(sqlite3_errmsg(handle_));
@@ -148,7 +150,7 @@ namespace ormpp {
 
                 T t = {};
                 iguana::for_each(t, [this, &t](auto item, auto I) {
-                    this->assign(t.*item, (int) decltype(I)::value);
+                    assign(t.*item, (int) decltype(I)::value);
                 });
 
                 v.push_back(std::move(t));
@@ -256,7 +258,7 @@ namespace ormpp {
 
         template<typename T, typename... Args>
         std::string generate_createtb_sql(Args &&... args) {
-            const auto type_name_arr = get_type_names<T>();
+            const auto type_name_arr = get_type_names<T>(DBType::sqlite);
             auto name = get_name<T>();
             std::string sql = std::string("CREATE TABLE IF NOT EXISTS ") + name.data() + "(";
             auto arr = iguana::get_array<T>();
@@ -406,7 +408,7 @@ namespace ormpp {
                     return;
                 }
 
-                bind_ok = this->set_param_bind(t.*item, index + 1);
+                bind_ok = set_param_bind(t.*item, index + 1);
                 index++;
             });
 

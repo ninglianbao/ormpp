@@ -71,13 +71,29 @@ namespace ormpp {
     };
 
     template<typename T>
-    inline constexpr auto get_type_names() {
+    inline constexpr auto get_type_names(DBType type) {
         constexpr auto SIZE = iguana::get_value<T>();
         std::array<std::string, SIZE> arr = {};
         iguana::for_each(T{}, [&](auto &item, auto i) {
             constexpr auto Idx = decltype(i)::value;
             using U = std::remove_reference_t<decltype(iguana::get<Idx>(std::declval<T>()))>;
-            arr[Idx] = ormpp_sqlite::type_to_name(identity<U>{});
+            std::string s;
+            switch (type){
+#ifdef ORMPP_ENABLE_MYSQL
+                case DBType::mysql : s = ormpp_mysql::type_to_name(identity<U>{});
+                    break;
+#endif
+#ifdef ORMPP_ENABLE_SQLITE3
+				case DBType::sqlite : s = ormpp_sqlite::type_to_name(identity<U>{});
+                    break;
+#endif
+#ifdef ORMPP_ENABLE_PG
+                case DBType::postgresql : s = ormpp_postgresql::type_to_name(identity<U>{});
+                    break;
+#endif
+            }
+
+            arr[Idx] = s;
         });
 
         return arr;
@@ -159,6 +175,7 @@ namespace ormpp {
     template<typename T, typename... Args>
     inline std::string generate_delete_sql(Args &&... where_conditon) {
         std::string sql = "delete from ";
+        constexpr auto SIZE = iguana::get_value<T>();
         auto name = get_name<T>();
         append(sql, name.data());
         if constexpr (sizeof...(Args) > 0) {
