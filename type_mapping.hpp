@@ -42,7 +42,16 @@ namespace ormpp {
 
         inline constexpr auto type_to_name(identity<int64_t>) noexcept { return "INTEGER"sv; }
 
-        inline auto type_to_name(identity<std::string>) noexcept { return "TEXT"sv; }
+        inline constexpr auto type_to_name(identity<std::string>) noexcept { return "TEXT"sv; }
+
+        template<class T>
+        inline constexpr auto type_to_name(identity<T>) noexcept {
+            using U = std::remove_const_t<std::remove_reference_t<T>>;
+            if constexpr (std::is_enum_v<U>) {
+                return "INTEGER"sv;
+            }
+            return "TEXT"sv;
+        }
 
         template<size_t N>
         inline constexpr auto type_to_name(identity<std::array<char, N>>) noexcept {

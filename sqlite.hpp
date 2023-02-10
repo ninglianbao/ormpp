@@ -359,6 +359,8 @@ namespace ormpp {
                 return SQLITE_OK == sqlite3_bind_text(stmt_, i, value.data(), (int) value.size(), nullptr);
             } else if constexpr (is_char_array_v<U>) {
                 return SQLITE_OK == sqlite3_bind_text(stmt_, i, value, sizeof(U), nullptr);
+            } else if constexpr (std::is_enum_v<U>) {
+                return SQLITE_OK == sqlite3_bind_int64(stmt_, i, (::int64_t) value);
             } else {
                 std::cout << "this type has not supported yet" << std::endl;
                 return false;
@@ -381,6 +383,8 @@ namespace ormpp {
                 memcpy(value, sqlite3_column_text(stmt_, i), sizeof(U));
             } else if constexpr (std::is_same_v<im::Date, U>) {
                 value = sqlite3_column_int64(stmt_, i);
+            } else if constexpr (std::is_enum_v<U>) {
+                value = (U) sqlite3_column_int64(stmt_, i);
             } else {
                 std::cout << "this type has not supported yet" << std::endl;
             }
