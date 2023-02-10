@@ -16,11 +16,11 @@ namespace ormpp {
             disconnect();
         }
 
-        bool ping() {
+        static bool ping() {
             return true;
         }
 
-        bool has_error() {
+        [[nodiscard]] bool has_error() const {
             return has_error_;
         }
 
@@ -53,7 +53,7 @@ namespace ormpp {
         }
 
         template<typename... Args>
-        bool disconnect(Args &&... args) {
+        bool disconnect(Args &&...) {
             if (handle_ != nullptr) {
                 auto r = sqlite3_close_v2(handle_);
                 handle_ = nullptr;
@@ -129,8 +129,6 @@ namespace ormpp {
         template<typename T, typename... Args>
         std::enable_if_t<iguana::is_reflection_v<T>, std::vector<T>> query(Args &&... args) {
             std::string sql = generate_query_sql<T>(args...);
-            constexpr auto SIZE = iguana::get_value<T>();
-
             int result = sqlite3_prepare_v2(handle_, sql.data(), (int) sql.size(), &stmt_, nullptr);
             if (result != SQLITE_OK) {
                 set_last_error(sqlite3_errmsg(handle_));
@@ -258,7 +256,7 @@ namespace ormpp {
 
         template<typename T, typename... Args>
         std::string generate_createtb_sql(Args &&... args) {
-            const auto type_name_arr = get_type_names<T>(DBType::sqlite);
+            const auto type_name_arr = get_type_names<T>();
             auto name = get_name<T>();
             std::string sql = std::string("CREATE TABLE IF NOT EXISTS ") + name.data() + "(";
             auto arr = iguana::get_array<T>();
@@ -332,7 +330,7 @@ namespace ormpp {
         }
 
         struct guard_statment {
-            guard_statment(sqlite3_stmt *stmt) : stmt_(stmt) {}
+            explicit guard_statment(sqlite3_stmt *stmt) : stmt_(stmt) {}
 
             sqlite3_stmt *stmt_ = nullptr;
             int status_ = 0;
@@ -370,10 +368,10 @@ namespace ormpp {
         template<typename T>
         void assign(T &&value, int i) {
             using U = std::remove_const_t<std::remove_reference_t<T>>;
-            if constexpr (std::is_integral_v<U> && !iguana::is_int64_v<U>) {//double, int64
-                value = sqlite3_column_int(stmt_, i);
-            } else if constexpr (iguana::is_int64_v<U>) {
+            if constexpr (iguana::is_int64_v<U>) {
                 value = sqlite3_column_int64(stmt_, i);
+            } else if constexpr (std::is_integral_v<U> && !iguana::is_int64_v<U>) {//double, int64
+                value = sqlite3_column_int(stmt_, i);
             } else if constexpr (std::is_floating_point_v<U>) {
                 value = sqlite3_column_double(stmt_, i);
             } else if constexpr (std::is_same_v<std::string, U>) {
@@ -391,7 +389,7 @@ namespace ormpp {
         }
 
         template<typename T, typename... Args>
-        int insert_impl(bool is_update, const std::string &sql, const T &t, Args &&... args) {
+        int insert_impl(bool is_update, const std::string &sql, const T &t, Args &&... ) {
             int result = sqlite3_prepare_v2(handle_, sql.data(), (int) sql.size(), &stmt_, nullptr);
             if (result != SQLITE_OK) {
                 set_last_error(sqlite3_errmsg(handle_));
